@@ -23,7 +23,8 @@ class SupabaseService:
                 'storage_path': file_path,
                 'filename': metadata.get('filename'),
                 'mime_type': 'application/pdf',
-                'uploaded_by': org_id,  # Using org_id as uploaded_by for now
+                # Skip uploaded_by for now - requires valid user_id
+                # 'uploaded_by': org_id,
                 'ocr_status': 'processing'
             }
             
