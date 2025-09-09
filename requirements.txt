@@ -1,0 +1,38 @@
+# Web Framework
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+
+# Database & Storage  
+supabase==2.0.3
+psycopg2-binary==2.9.7
+
+# Background Tasks
+celery==5.3.4
+redis==5.0.1
+
+# Azure Integration
+azure-ai-documentintelligence==1.0.0b1
+azure-core==1.29.5
+
+# File Processing
+python-multipart==0.0.6
+PyPDF2==3.0.1
+Pillow==10.1.0
+
+# Environment & Configuration
+python-dotenv==1.0.0
+pydantic==2.5.0
+pydantic-settings==2.0.3
+
+# HTTP Client (Compatible with Supabase)
+httpx>=0.24.0,<0.25.0
+aiofiles==23.2.0
+
+# Monitoring & Logging
+python-json-logger==2.0.7
+
+# Development
+pytest==7.4.3
+pytest-asyncio==0.21.1
+black==23.11.0
+flake8==6.1.0
