@@ -113,7 +113,7 @@ async def upload_document(
             document_id=document_id,
             status=DocumentStatus.UPLOADED,
             message="Document uploaded successfully. Starting quick analysis...",
-            storage_path=file_path
+            file_path=file_path
         )
         
     except HTTPException as http_error:
