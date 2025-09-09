@@ -27,9 +27,9 @@ class SupabaseService:
                 'ocr_status': 'uploaded'
             }
             
-            # Add document_type_id if provided
-            if metadata.get('document_type'):
-                insert_data['document_type_id'] = metadata.get('document_type')
+            # Skip document_type_id for now - it requires UUID mapping
+            # if metadata.get('document_type'):
+            #     insert_data['document_type_id'] = metadata.get('document_type')
             
             logger.info(f"Insert data: {insert_data}")
             
