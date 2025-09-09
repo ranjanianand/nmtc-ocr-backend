@@ -24,7 +24,7 @@ class SupabaseService:
                 'filename': metadata.get('filename'),
                 'mime_type': 'application/pdf',
                 'uploaded_by': org_id,  # Using org_id as uploaded_by for now
-                'ocr_status': 'uploaded'
+                'ocr_status': 'processing'
             }
             
             # Skip document_type_id for now - it requires UUID mapping
