@@ -208,7 +208,7 @@ async def test_table():
             "error": str(e)
         }
 
-@router.post("/test-storage")
+@router.get("/test-storage")
 async def test_storage():
     """Test Supabase storage connection"""
     try:
