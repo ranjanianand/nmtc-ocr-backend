@@ -22,6 +22,7 @@ async def upload_document(
     cde_name: Optional[str] = Form(None),
     client_info: Optional[str] = Form(None),
     org_id: str = Form(...),
+    user_id: Optional[str] = Form(None),
 ):
     """Upload document and start processing pipeline"""
     
@@ -89,7 +90,8 @@ async def upload_document(
             document_record = await supabase_service.create_document_record(
                 org_id=org_id,
                 file_path=file_path,
-                metadata=metadata
+                metadata=metadata,
+                user_id=user_id
             )
             
             if not document_record:

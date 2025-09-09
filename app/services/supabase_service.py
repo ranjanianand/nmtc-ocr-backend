@@ -12,7 +12,7 @@ class SupabaseService:
             settings.SUPABASE_SERVICE_KEY
         )
     
-    async def create_document_record(self, org_id: str, file_path: str, metadata: dict):
+    async def create_document_record(self, org_id: str, file_path: str, metadata: dict, user_id: str = None):
         """Create initial document record in database"""
         try:
             logger.info(f"Creating document record for org: {org_id}, path: {file_path}")
@@ -23,8 +23,7 @@ class SupabaseService:
                 'storage_path': file_path,
                 'filename': metadata.get('filename'),
                 'mime_type': 'application/pdf',
-                # Skip uploaded_by for now - requires valid user_id
-                # 'uploaded_by': org_id,
+                'uploaded_by': user_id if user_id else org_id,
                 'ocr_status': 'processing'
             }
             
