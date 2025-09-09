@@ -173,7 +173,7 @@ class DocumentType(BaseDBModel):
     parent_id: Optional[uuid.UUID] = None
     key: str
     display_name: str
-    version: str = Field(..., regex=r'^[0-9]+(\.[0-9]+){1,2}$')
+    version: str = Field(..., pattern=r'^[0-9]+(\.[0-9]+){1,2}$')
     status: StatusState = StatusState.DRAFT
     notes: Optional[str] = None
     created_by: uuid.UUID
