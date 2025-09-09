@@ -77,13 +77,19 @@ async def upload_document(
         logger.info("Creating database record...")
         
         try:
+            # Simple metadata with only essential fields
             metadata = {
                 'filename': file.filename,
-                'document_type': document_type,
-                'cde_name': cde_name,
-                'client_info': client_info,
                 'file_size': file_size
             }
+            
+            # Add optional fields only if provided
+            if document_type:
+                metadata['document_type'] = document_type
+            if cde_name:
+                metadata['cde_name'] = cde_name  
+            if client_info:
+                metadata['client_info'] = client_info
             
             logger.info(f"Creating document record with metadata: {metadata}")
             
