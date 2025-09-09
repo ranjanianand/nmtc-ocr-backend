@@ -1,0 +1,13 @@
+[build]
+builder = "nixpacks"
+
+[deploy]
+healthcheckPath = "/health"
+healthcheckTimeout = 300
+restartPolicyType = "always"
+
+[[services]]
+serviceName = "nmtc-backend"
+
+[services.source]
+repo = "your-repo/nmtc-backend"

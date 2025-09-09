@@ -13,10 +13,13 @@ app = FastAPI(
     version="1.0.0"
 )
 
+# Get port from environment for Railway deployment
+port = int(os.getenv("PORT", 8000))
+
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:5173"],
+    allow_origins=["http://localhost:3000", "http://localhost:5173", "*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

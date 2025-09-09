@@ -22,7 +22,7 @@ Pillow==11.0.0
 # Environment & Validation
 python-dotenv==1.0.1
 pydantic>=2.11.0
-pydantic-settings==2.8.2
+pydantic-settings==2.10.1
 
 # HTTP & Async
 httpx>=0.28.0
