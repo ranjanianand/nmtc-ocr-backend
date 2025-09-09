@@ -25,7 +25,7 @@ pydantic>=2.11.0
 pydantic-settings==2.10.1
 
 # HTTP & Async
-httpx>=0.28.0
+httpx>=0.26.0,<0.28.0
 aiofiles==24.1.0
 
 # Logging
