@@ -10,7 +10,6 @@ from app.utils.exceptions import (
     DatabaseError,
     StorageError
 )
-from app.utils.logging_config import get_structured_logger
 import uuid
 import logging
 from typing import Dict, Any, Optional
@@ -18,7 +17,7 @@ from datetime import datetime
 import asyncio
 
 logger = logging.getLogger(__name__)
-structured_logger = get_structured_logger(__name__)
+# Removed structured logger to avoid circular import
 
 # Initialize Celery app
 celery_app = Celery(
@@ -68,7 +67,7 @@ def process_document_quick_detection(self, document_id: str, user_id: str = None
     document_uuid = uuid.UUID(document_id)
     user_uuid = uuid.UUID(user_id) if user_id else None
     
-    structured_logger.info("Starting quick document detection task",
+    logger.info("Starting quick document detection task",
                          document_id=document_id,
                          user_id=user_id,
                          task_id=self.request.id)
@@ -78,11 +77,11 @@ def process_document_quick_detection(self, document_id: str, user_id: str = None
         document = run_async(database_service.get_document(document_uuid))
         if not document:
             error_msg = f"Document {document_id} not found"
-            structured_logger.error("Document not found for processing",
+            logger.error("Document not found for processing",
                                   document_id=document_id)
             raise DocumentProcessingError(error_msg, document_uuid, "document_lookup")
         
-        structured_logger.info("Document retrieved from database",
+        logger.info("Document retrieved from database",
                              document_id=document_id,
                              filename=document.filename,
                              storage_path=document.storage_path,
@@ -94,12 +93,12 @@ def process_document_quick_detection(self, document_id: str, user_id: str = None
             DocumentUpdate(ocr_status=OcrStatus.PROCESSING)
         ))
         
-        structured_logger.info("Updated document status to processing",
+        logger.info("Updated document status to processing",
                              document_id=document_id)
         
         # Step 3: Download PDF from Supabase Storage
         try:
-            structured_logger.info("Downloading document from storage",
+            logger.info("Downloading document from storage",
                                  document_id=document_id,
                                  storage_path=document.storage_path)
             
@@ -111,13 +110,13 @@ def process_document_quick_detection(self, document_id: str, user_id: str = None
                     raise StorageError(f"Failed to download file: {document.storage_path}")
                 
                 document_content = result
-                structured_logger.info("Successfully downloaded document from storage",
+                logger.info("Successfully downloaded document from storage",
                                      document_id=document_id,
                                      file_size=len(document_content))
                 
             except Exception as download_error:
                 # Fallback: try getting public URL and downloading via HTTP
-                structured_logger.warning("Direct download failed, trying public URL method",
+                logger.warning("Direct download failed, trying public URL method",
                                         document_id=document_id,
                                         error=str(download_error))
                 
@@ -138,13 +137,13 @@ def process_document_quick_detection(self, document_id: str, user_id: str = None
                 with concurrent.futures.ThreadPoolExecutor() as executor:
                     document_content = executor.submit(download_file).result()
                 
-                structured_logger.info("Downloaded document via public URL",
+                logger.info("Downloaded document via public URL",
                                      document_id=document_id,
                                      file_size=len(document_content))
             
         except Exception as e:
             error_msg = f"Failed to download document from storage: {str(e)}"
-            structured_logger.error("Document download failed",
+            logger.error("Document download failed",
                                   document_id=document_id,
                                   storage_path=document.storage_path,
                                   error=str(e))
@@ -165,7 +164,7 @@ def process_document_quick_detection(self, document_id: str, user_id: str = None
                 content_type=document.mime_type
             ))
             
-            structured_logger.info("Azure OCR analysis completed",
+            logger.info("Azure OCR analysis completed",
                                  document_id=document_id,
                                  pages_processed=analysis_result.get('page_count', 0),
                                  characters_extracted=len(analysis_result.get('full_text', '')),
@@ -173,7 +172,7 @@ def process_document_quick_detection(self, document_id: str, user_id: str = None
             
         except Exception as e:
             error_msg = f"Azure OCR processing failed: {str(e)}"
-            structured_logger.error("Azure OCR processing failed",
+            logger.error("Azure OCR processing failed",
                                   document_id=document_id,
                                   error=str(e))
             
@@ -189,7 +188,7 @@ def process_document_quick_detection(self, document_id: str, user_id: str = None
         try:
             full_text = analysis_result.get("full_text", "")
             
-            structured_logger.info("Starting document type detection",
+            logger.info("Starting document type detection",
                                  document_id=document_id,
                                  text_length=len(full_text))
             
@@ -200,7 +199,7 @@ def process_document_quick_detection(self, document_id: str, user_id: str = None
                 filename=document.filename
             )
             
-            structured_logger.info("Document type detection completed",
+            logger.info("Document type detection completed",
                                  document_id=document_id,
                                  detected_type=detection_result.document_type.value,
                                  confidence=detection_result.confidence,
@@ -209,7 +208,7 @@ def process_document_quick_detection(self, document_id: str, user_id: str = None
             
         except Exception as e:
             # Don't fail the entire task if detection fails
-            structured_logger.warning("Document type detection failed, continuing with OCR results",
+            logger.warning("Document type detection failed, continuing with OCR results",
                                     document_id=document_id,
                                     error=str(e))
             
@@ -290,7 +289,7 @@ def process_document_quick_detection(self, document_id: str, user_id: str = None
                 )
             ))
             
-            structured_logger.info("Document processing completed successfully",
+            logger.info("Document processing completed successfully",
                                  document_id=document_id,
                                  final_status=OcrStatus.COMPLETED.value,
                                  text_length=len(analysis_result.get("full_text", "")),
@@ -318,7 +317,7 @@ def process_document_quick_detection(self, document_id: str, user_id: str = None
                 ))
             except Exception as audit_error:
                 # Don't fail the task if audit logging fails
-                structured_logger.warning("Failed to create audit log",
+                logger.warning("Failed to create audit log",
                                         document_id=document_id,
                                         error=str(audit_error))
             
@@ -340,7 +339,7 @@ def process_document_quick_detection(self, document_id: str, user_id: str = None
             
         except Exception as e:
             error_msg = f"Failed to update database with results: {str(e)}"
-            structured_logger.error("Database update failed",
+            logger.error("Database update failed",
                                   document_id=document_id,
                                   error=str(e))
             
@@ -351,7 +350,7 @@ def process_document_quick_detection(self, document_id: str, user_id: str = None
                     DocumentUpdate(ocr_status=OcrStatus.ERROR)
                 ))
             except Exception as db_error:
-                structured_logger.error("Failed to update error status",
+                logger.error("Failed to update error status",
                                       document_id=document_id,
                                       error=str(db_error))
             
@@ -359,7 +358,7 @@ def process_document_quick_detection(self, document_id: str, user_id: str = None
         
     except Exception as exc:
         # Log the error and attempt retry
-        structured_logger.error("Document processing task failed",
+        logger.error("Document processing task failed",
                               document_id=document_id,
                               task_id=self.request.id,
                               error=str(exc),
@@ -368,7 +367,7 @@ def process_document_quick_detection(self, document_id: str, user_id: str = None
         # Retry logic
         if self.request.retries < self.max_retries:
             retry_delay = min(300 * (2 ** self.request.retries), 1800)  # Exponential backoff, max 30 min
-            structured_logger.info("Retrying document processing task",
+            logger.info("Retrying document processing task",
                                  document_id=document_id,
                                  retry_count=self.request.retries + 1,
                                  retry_delay=retry_delay)
@@ -395,7 +394,7 @@ def process_document_quick_detection(self, document_id: str, user_id: str = None
                     }
                 ))
             except Exception as cleanup_error:
-                structured_logger.error("Failed to clean up after task failure",
+                logger.error("Failed to clean up after task failure",
                                       document_id=document_id,
                                       error=str(cleanup_error))
             
@@ -418,7 +417,7 @@ def process_document_type_detection(self, document_id: str, user_id: str = None)
     document_uuid = uuid.UUID(document_id)
     user_uuid = uuid.UUID(user_id) if user_id else None
     
-    structured_logger.info("Starting standalone document type detection task",
+    logger.info("Starting standalone document type detection task",
                          document_id=document_id,
                          user_id=user_id,
                          task_id=self.request.id)
@@ -495,7 +494,7 @@ def process_document_type_detection(self, document_id: str, user_id: str = None)
             DocumentUpdate(parsed_index=current_parsed_index)
         ))
         
-        structured_logger.info("Standalone document type detection completed",
+        logger.info("Standalone document type detection completed",
                              document_id=document_id,
                              detected_type=detection_result.document_type.value,
                              confidence=detection_result.confidence,
@@ -518,7 +517,7 @@ def process_document_type_detection(self, document_id: str, user_id: str = None)
                 }
             ))
         except Exception as audit_error:
-            structured_logger.warning("Failed to create audit log for type detection",
+            logger.warning("Failed to create audit log for type detection",
                                     document_id=document_id,
                                     error=str(audit_error))
         
@@ -535,7 +534,7 @@ def process_document_type_detection(self, document_id: str, user_id: str = None)
         }
         
     except Exception as exc:
-        structured_logger.error("Document type detection task failed",
+        logger.error("Document type detection task failed",
                               document_id=document_id,
                               task_id=self.request.id,
                               error=str(exc),
@@ -544,14 +543,14 @@ def process_document_type_detection(self, document_id: str, user_id: str = None)
         # Retry logic for transient failures
         if self.request.retries < self.max_retries:
             retry_delay = 60 * (self.request.retries + 1)
-            structured_logger.info("Retrying document type detection task",
+            logger.info("Retrying document type detection task",
                                  document_id=document_id,
                                  retry_count=self.request.retries + 1,
                                  retry_delay=retry_delay)
             raise self.retry(countdown=retry_delay, exc=exc)
         else:
             # Max retries reached
-            structured_logger.error("Document type detection task failed permanently",
+            logger.error("Document type detection task failed permanently",
                                   document_id=document_id,
                                   task_id=self.request.id,
                                   error=str(exc))
@@ -573,7 +572,7 @@ def process_document_layout_analysis(self, document_id: str, user_id: str = None
     document_uuid = uuid.UUID(document_id)
     user_uuid = uuid.UUID(user_id) if user_id else None
     
-    structured_logger.info("Starting document layout analysis task",
+    logger.info("Starting document layout analysis task",
                          document_id=document_id,
                          user_id=user_id,
                          task_id=self.request.id)
@@ -630,7 +629,7 @@ def process_document_layout_analysis(self, document_id: str, user_id: str = None
             DocumentUpdate(parsed_index=current_parsed_index)
         ))
         
-        structured_logger.info("Document layout analysis completed",
+        logger.info("Document layout analysis completed",
                              document_id=document_id,
                              tables_found=len(analysis_result.get("tables", [])),
                              paragraphs_found=len(analysis_result.get("paragraphs", [])))
@@ -646,7 +645,7 @@ def process_document_layout_analysis(self, document_id: str, user_id: str = None
         }
         
     except Exception as exc:
-        structured_logger.error("Layout analysis task failed",
+        logger.error("Layout analysis task failed",
                               document_id=document_id,
                               error=str(exc))
         raise
@@ -657,7 +656,7 @@ def cleanup_failed_documents():
     """
     Periodic task to clean up documents that have been stuck in processing state
     """
-    structured_logger.info("Starting cleanup of failed documents")
+    logger.info("Starting cleanup of failed documents")
     
     try:
         # This would query for documents stuck in processing state for too long
@@ -669,11 +668,11 @@ def cleanup_failed_documents():
         # - Update their status to "error"
         # - Create audit log entries
         
-        structured_logger.info("Completed cleanup of failed documents")
+        logger.info("Completed cleanup of failed documents")
         return {"status": "completed", "documents_cleaned": 0}
         
     except Exception as e:
-        structured_logger.error("Failed to clean up documents", error=str(e))
+        logger.error("Failed to clean up documents", error=str(e))
         raise
 
 
@@ -730,7 +729,7 @@ def get_document_processing_status(document_id: str):
         }
         
     except Exception as e:
-        structured_logger.error("Failed to get document status",
+        logger.error("Failed to get document status",
                               document_id=document_id,
                               error=str(e))
         return {

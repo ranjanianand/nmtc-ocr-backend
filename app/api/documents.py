@@ -7,6 +7,7 @@ import uuid
 import os
 import aiofiles
 from typing import Optional
+from datetime import datetime
 import logging
 
 # Setup logging
@@ -111,8 +112,9 @@ async def upload_document(
             logger.error(f"Database error type: {type(db_error)}")
             raise HTTPException(status_code=500, detail=f"Database operation failed: {str(db_error)}")
         
-        # TODO: Queue for quick document detection (Stage 0A)
-        # celery_app.send_task("quick_document_detection", args=[document_id])
+        # Queue for quick document detection (Stage 0A)
+        from app.tasks.document_tasks import process_document_quick_detection
+        process_document_quick_detection.delay(document_id, user_id)
         
         # Success response
         logger.info(f"Upload completed successfully for document: {document_id}")
@@ -135,7 +137,7 @@ async def upload_document(
 
 @router.get("/{document_id}/status")
 async def get_document_status(document_id: str):
-    """Get current processing status of document"""
+    """Get current processing status of document with detection results"""
     try:
         logger.info(f"Getting status for document: {document_id}")
         
@@ -143,15 +145,50 @@ async def get_document_status(document_id: str):
         if not document:
             raise HTTPException(status_code=404, detail="Document not found")
         
-        return {
+        # Basic document info
+        response = {
             "document_id": document_id,
-            "ocr_status": document.get('ocr_status'),
+            "status": document.get('ocr_status'),
             "filename": document.get('filename'),
             "storage_path": document.get('storage_path'),
             "uploaded_at": document.get('uploaded_at'),
             "mime_type": document.get('mime_type'),
             "org_id": document.get('org_id')
         }
+        
+        # Add detection results if available
+        parsed_index = document.get('parsed_index', {})
+        if 'detection_results' in parsed_index:
+            detection_results = parsed_index['detection_results']
+            response['detection'] = {
+                "detected_type": detection_results.get('document_type_detected'),
+                "confidence": detection_results.get('confidence', 0.0),
+                "reasoning": detection_results.get('reasoning', ''),
+                "primary_indicators_count": len(detection_results.get('primary_indicators', [])),
+                "secondary_indicators_count": len(detection_results.get('secondary_indicators', [])),
+                "processed_at": detection_results.get('processed_at'),
+                "user_confirmed_type": detection_results.get('user_confirmed_type'),
+                "confirmed_at": detection_results.get('confirmed_at')
+            }
+            
+            # Add confidence level and requirements
+            confidence = detection_results.get('confidence', 0.0)
+            if confidence >= 0.9:
+                response['detection']['confidence_level'] = 'high'
+                response['detection']['requires_confirmation'] = False
+            elif confidence >= 0.7:
+                response['detection']['confidence_level'] = 'medium'
+                response['detection']['requires_confirmation'] = True
+                response['detection']['auto_process_countdown'] = 10
+            else:
+                response['detection']['confidence_level'] = 'low'
+                response['detection']['requires_confirmation'] = True
+        
+        # Add processing history if available
+        if 'processing_history' in parsed_index:
+            response['processing_history'] = parsed_index['processing_history']
+        
+        return response
     except HTTPException:
         raise
     except Exception as e:
@@ -244,3 +281,282 @@ async def test_storage():
             "status": "failed",
             "error": str(e)
         }
+
+@router.post("/{document_id}/start-detection", response_model=DocumentDetectionResponse)
+async def start_document_detection(
+    document_id: str,
+    request: StartDetectionRequest,
+    user_id: Optional[str] = None
+):
+    """Manually trigger document detection for uploaded document"""
+    try:
+        logger.info(f"Starting detection for document: {document_id}")
+        
+        # Check if document exists
+        document = await supabase_service.get_document(document_id)
+        if not document:
+            raise HTTPException(status_code=404, detail="Document not found")
+        
+        # Check if document is in correct state
+        if document.get('ocr_status') not in ['processing', 'uploaded']:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Document is in {document.get('ocr_status')} state, cannot start detection"
+            )
+        
+        # Queue the detection task
+        from app.tasks.document_tasks import process_document_quick_detection
+        task = process_document_quick_detection.delay(document_id, request.user_id or user_id)
+        
+        # Update status to detecting
+        await supabase_service.update_document_status(document_id, 'detecting')
+        
+        return DocumentDetectionResponse(
+            document_id=document_id,
+            status=DocumentStatus.DETECTING,
+            message="Document detection started successfully",
+            processing_time_ms=None
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error starting detection: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to start detection: {str(e)}")
+
+@router.get("/{document_id}/detection-status", response_model=DocumentDetectionResponse)
+async def get_detection_status(document_id: str):
+    """Get current detection status and results"""
+    try:
+        logger.info(f"Getting detection status for document: {document_id}")
+        
+        document = await supabase_service.get_document(document_id)
+        if not document:
+            raise HTTPException(status_code=404, detail="Document not found")
+        
+        # Check if document has detection results
+        parsed_index = document.get('parsed_index', {})
+        detection_results = parsed_index.get('detection_results', {})
+        
+        if not detection_results:
+            return DocumentDetectionResponse(
+                document_id=document_id,
+                status=DocumentStatus(document.get('ocr_status', 'uploaded')),
+                message="Detection not started or still in progress"
+            )
+        
+        # Parse detection results
+        detected_type = detection_results.get('document_type_detected', 'unknown')
+        confidence = detection_results.get('confidence', 0.0)
+        
+        # Determine confidence level and requirements
+        confidence_level = ConfidenceLevel.LOW
+        requires_confirmation = True
+        auto_process_countdown = None
+        
+        if confidence >= 0.9:
+            confidence_level = ConfidenceLevel.HIGH
+            requires_confirmation = False
+        elif confidence >= 0.7:
+            confidence_level = ConfidenceLevel.MEDIUM
+            requires_confirmation = True
+            auto_process_countdown = 10
+        
+        # Build pattern indicators
+        primary_indicators = [
+            PatternIndicator(
+                pattern_type=ind.get('pattern_type', ''),
+                match_text=ind.get('match_text', ''),
+                confidence=ind.get('confidence', 0.0),
+                location=ind.get('location', ''),
+                context=ind.get('context', '')
+            )
+            for ind in detection_results.get('primary_indicators', [])
+        ]
+        
+        secondary_indicators = [
+            PatternIndicator(
+                pattern_type=ind.get('pattern_type', ''),
+                match_text=ind.get('match_text', ''),
+                confidence=ind.get('confidence', 0.0),
+                location=ind.get('location', ''),
+                context=ind.get('context', '')
+            )
+            for ind in detection_results.get('secondary_indicators', [])
+        ]
+        
+        detection_result = DetectionResult(
+            document_id=document_id,
+            detected_type=DocumentType(detected_type),
+            confidence=confidence,
+            confidence_level=confidence_level,
+            primary_indicators=primary_indicators,
+            secondary_indicators=secondary_indicators,
+            reasoning=detection_results.get('reasoning', ''),
+            requires_confirmation=requires_confirmation,
+            auto_process_countdown=auto_process_countdown
+        )
+        
+        return DocumentDetectionResponse(
+            document_id=document_id,
+            status=DocumentStatus.DETECTION_COMPLETE,
+            detection_result=detection_result,
+            message="Detection completed successfully"
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting detection status: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get detection status: {str(e)}")
+
+@router.post("/{document_id}/confirm-detection")
+async def confirm_detection_result(
+    document_id: str,
+    validation: DocumentValidationRequest
+):
+    """User confirms or corrects document detection result"""
+    try:
+        logger.info(f"Confirming detection for document: {document_id}")
+        
+        document = await supabase_service.get_document(document_id)
+        if not document:
+            raise HTTPException(status_code=404, detail="Document not found")
+        
+        # Update document with user confirmation
+        updates = {
+            'ocr_status': 'processing' if validation.proceed_with_processing else 'detection_complete'
+        }
+        
+        # Store user validation in parsed_index
+        parsed_index = document.get('parsed_index', {})
+        if 'detection_results' not in parsed_index:
+            parsed_index['detection_results'] = {}
+        
+        parsed_index['detection_results']['user_confirmed_type'] = validation.confirmed_type.value
+        parsed_index['detection_results']['user_corrections'] = validation.user_corrections
+        parsed_index['detection_results']['user_notes'] = validation.user_notes
+        parsed_index['detection_results']['confirmed_at'] = datetime.utcnow().isoformat()
+        
+        updates['parsed_index'] = parsed_index
+        
+        updated_document = await supabase_service.update_document_status(
+            document_id, 
+            updates['ocr_status'], 
+            updates
+        )
+        
+        if validation.proceed_with_processing:
+            # TODO: Trigger full document processing (Stage 0B)
+            # from app.tasks.document_tasks import process_document_full_analysis
+            # process_document_full_analysis.delay(document_id, validation.user_id)
+            logger.info(f"Queuing document {document_id} for full processing")
+        
+        return {
+            "document_id": document_id,
+            "status": updates['ocr_status'],
+            "confirmed_type": validation.confirmed_type.value,
+            "message": "Detection result confirmed successfully" + (
+                ". Starting full processing..." if validation.proceed_with_processing 
+                else ". Ready for manual processing trigger."
+            )
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error confirming detection: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to confirm detection: {str(e)}")
+
+@router.post("/{document_id}/manual-detection")
+async def manual_detection_trigger(document_id: str):
+    """Temporary endpoint to manually trigger detection without Celery"""
+    try:
+        logger.info(f"Manual detection trigger for document: {document_id}")
+        
+        # Import the detection task function directly
+        from app.tasks.document_tasks import process_document_quick_detection
+        from app.services.azure_doc_intelligence import AzureDocIntelligenceService
+        from app.services.nmtc_detection import NMTCDocumentDetector
+        from app.services.supabase_service import SupabaseService
+        
+        # Get document info
+        document = await supabase_service.get_document(document_id)
+        if not document:
+            raise HTTPException(status_code=404, detail="Document not found")
+            
+        logger.info(f"Processing document: {document.get('file_name')} at {document.get('storage_path')}")
+        
+        # Update status to detecting
+        await supabase_service.update_document_status(
+            document_id, 
+            "detecting",
+            {"processing_stage": "detecting"}
+        )
+        
+        # Initialize services
+        azure_service = AzureDocIntelligenceService()
+        nmtc_detector = NMTCDocumentDetector()
+        
+        # Download PDF from Supabase Storage
+        supabase_client = SupabaseService()
+        file_url = supabase_client.get_signed_url(document['storage_path'])
+        
+        # Extract text using Azure Document Intelligence
+        logger.info("Starting Azure Document Intelligence extraction...")
+        extraction_result = await azure_service.analyze_document_quick(file_url)
+        
+        if not extraction_result or not extraction_result.get('content'):
+            raise Exception("Failed to extract text from document")
+            
+        # Detect document type using NMTC patterns
+        logger.info("Starting NMTC document type detection...")
+        detection_result = nmtc_detector.detect_document_type(extraction_result['content'])
+        
+        # Update document with results
+        updates = {
+            'ocr_status': 'detection_complete',
+            'processing_stage': 'detection_complete',
+            'document_type_id': detection_result.get('detected_type'),
+            'confidence_score': detection_result.get('confidence', 0.0),
+            'parsed_index': {
+                'detection_results': {
+                    'detected_type': detection_result.get('detected_type'),
+                    'confidence': detection_result.get('confidence', 0.0),
+                    'confidence_level': detection_result.get('confidence_level', 'low'),
+                    'reasoning': detection_result.get('reasoning', ''),
+                    'extracted_metadata': detection_result.get('extracted_metadata', {}),
+                    'requires_confirmation': detection_result.get('requires_confirmation', True),
+                    'detected_at': datetime.utcnow().isoformat()
+                },
+                'azure_extraction': extraction_result
+            }
+        }
+        
+        updated_document = await supabase_service.update_document_status(
+            document_id,
+            updates['ocr_status'],
+            updates
+        )
+        
+        return {
+            "document_id": document_id,
+            "status": "detection_complete",
+            "detection_result": detection_result,
+            "extraction_summary": {
+                "content_length": len(extraction_result['content']),
+                "pages_processed": extraction_result.get('pages', 0)
+            },
+            "message": "Manual detection completed successfully"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Manual detection error: {e}")
+        await supabase_service.update_document_status(
+            document_id,
+            "error",
+            {"error_message": str(e), "processing_stage": "error"}
+        )
+        raise HTTPException(status_code=500, detail=f"Manual detection failed: {str(e)}")

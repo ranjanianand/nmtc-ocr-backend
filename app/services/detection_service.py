@@ -17,10 +17,10 @@ from app.utils.nmtc_patterns import (
     COMPLIANCE_TERMS,
     get_confidence_level_description
 )
-from app.utils.logging_config import get_structured_logger
 from app.utils.exceptions import DocumentProcessingError
+import logging
 
-structured_logger = get_structured_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class NMTCDetectionService:
@@ -28,7 +28,7 @@ class NMTCDetectionService:
     
     def __init__(self):
         self.patterns = NMTCPatterns()
-        structured_logger.info("NMTC Detection Service initialized")
+        logger.info("NMTC Detection Service initialized")
     
     def detect_document_type(
         self, 
@@ -48,7 +48,7 @@ class NMTCDetectionService:
             DocumentTypeResult with classification and metadata
         """
         try:
-            structured_logger.info("Starting document type detection",
+            logger.info("Starting document type detection",
                                  document_id=str(document_id) if document_id else None,
                                  filename=filename,
                                  text_length=len(text_content))
@@ -65,7 +65,7 @@ class NMTCDetectionService:
                 type_scores[doc_type] = score
                 all_matches[doc_type] = matches
                 
-                structured_logger.debug("Document type scoring",
+                logger.debug("Document type scoring",
                                       doc_type=doc_type.value,
                                       score=score,
                                       match_count=len(matches))
@@ -95,7 +95,7 @@ class NMTCDetectionService:
                 reasoning=self._generate_reasoning(best_type, best_score, best_matches)
             )
             
-            structured_logger.info("Document type detection completed",
+            logger.info("Document type detection completed",
                                  document_id=str(document_id) if document_id else None,
                                  detected_type=best_type.value,
                                  confidence=best_score,
@@ -105,7 +105,7 @@ class NMTCDetectionService:
             return result
             
         except Exception as e:
-            structured_logger.error("Document type detection failed",
+            logger.error("Document type detection failed",
                                   document_id=str(document_id) if document_id else None,
                                   error=str(e))
             raise DocumentProcessingError(f"Document type detection failed: {e}", document_id)

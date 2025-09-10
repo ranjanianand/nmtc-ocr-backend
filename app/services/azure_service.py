@@ -4,16 +4,15 @@ from azure.core.credentials import AzureKeyCredential
 from azure.core.exceptions import AzureError, HttpResponseError
 from app.config import settings
 from app.utils.exceptions import ExternalServiceError, ConfigurationError
-from app.utils.logging_config import get_structured_logger
 from typing import Dict, Any, List, Optional, Union
 import logging
 import uuid
 from datetime import datetime
 import io
 import time
+import base64
 
 logger = logging.getLogger(__name__)
-structured_logger = get_structured_logger(__name__)
 
 
 class AzureDocumentIntelligenceError(ExternalServiceError):
@@ -45,12 +44,10 @@ class AzureDocumentIntelligenceService:
                 credential=AzureKeyCredential(self.key)
             )
             
-            structured_logger.info("Azure Document Intelligence service initialized", 
-                                 endpoint=self.endpoint)
+            logger.info(f"Azure Document Intelligence service initialized at {self.endpoint}")
             
         except Exception as e:
-            structured_logger.error("Failed to initialize Azure Document Intelligence service", 
-                                  error=str(e))
+            logger.error(f"Failed to initialize Azure Document Intelligence service: {e}")
             raise ConfigurationError(f"Failed to initialize Azure Document Intelligence: {e}")
     
     def _handle_azure_error(self, error: Exception, operation: str) -> None:
@@ -58,22 +55,15 @@ class AzureDocumentIntelligenceService:
         if isinstance(error, HttpResponseError):
             status_code = error.status_code
             error_msg = f"Azure API error (HTTP {status_code}): {error.message}"
-            structured_logger.error("Azure Document Intelligence API error",
-                                  operation=operation,
-                                  status_code=status_code,
-                                  error_message=error.message)
+            logger.error(f"Azure Document Intelligence API error - operation: {operation}, status: {status_code}, message: {error.message}")
             raise AzureDocumentIntelligenceError(error_msg, operation, status_code)
         elif isinstance(error, AzureError):
             error_msg = f"Azure service error: {str(error)}"
-            structured_logger.error("Azure Document Intelligence service error",
-                                  operation=operation,
-                                  error=str(error))
+            logger.error(f"Azure Document Intelligence service error - operation: {operation}, error: {str(error)}")
             raise AzureDocumentIntelligenceError(error_msg, operation)
         else:
             error_msg = f"Unexpected error during {operation}: {str(error)}"
-            structured_logger.error("Unexpected Azure Document Intelligence error",
-                                  operation=operation,
-                                  error=str(error))
+            logger.error(f"Unexpected Azure Document Intelligence error - operation: {operation}, error: {str(error)}")
             raise AzureDocumentIntelligenceError(error_msg, operation)
     
     async def analyze_document_quick(
@@ -97,13 +87,11 @@ class AzureDocumentIntelligenceService:
         operation = "analyze_document_quick"
         
         try:
-            structured_logger.info("Starting quick document analysis",
-                                 document_id=str(document_id),
-                                 content_type=content_type,
-                                 content_size=len(document_content))
+            logger.info(f"Starting quick document analysis for document {document_id}, content_type: {content_type}, size: {len(document_content)} bytes")
             
-            # Create analyze request
-            analyze_request = AnalyzeDocumentRequest(bytes_source=document_content)
+            # Create analyze request with base64 encoded content
+            base64_content = base64.b64encode(document_content).decode('utf-8')
+            analyze_request = AnalyzeDocumentRequest(base64_source=base64_content)
             
             # Use prebuilt-read model for quick text extraction
             poller = self.client.begin_analyze_document(
@@ -120,20 +108,13 @@ class AzureDocumentIntelligenceService:
             # Extract and structure the results
             analysis_result = self._process_read_result(result, document_id, duration_ms)
             
-            structured_logger.info("Quick document analysis completed",
-                                 document_id=str(document_id),
-                                 duration_ms=duration_ms,
-                                 pages_processed=analysis_result.get('page_count', 0),
-                                 characters_extracted=len(analysis_result.get('full_text', '')))
+            logger.info(f"Quick document analysis completed for document {document_id}, duration: {duration_ms}ms, pages: {analysis_result.get('page_count', 0)}, chars: {len(analysis_result.get('full_text', ''))}")
             
             return analysis_result
             
         except Exception as e:
             duration_ms = (time.time() - start_time) * 1000
-            structured_logger.error("Quick document analysis failed",
-                                  document_id=str(document_id),
-                                  duration_ms=duration_ms,
-                                  error=str(e))
+            logger.error(f"Quick document analysis failed for document {document_id}, duration: {duration_ms}ms, error: {str(e)}")
             self._handle_azure_error(e, operation)
     
     async def analyze_document_layout(
@@ -157,7 +138,7 @@ class AzureDocumentIntelligenceService:
         operation = "analyze_document_layout"
         
         try:
-            structured_logger.info("Starting document layout analysis",
+            logger.info("Starting document layout analysis",
                                  document_id=str(document_id),
                                  content_type=content_type)
             
@@ -179,7 +160,7 @@ class AzureDocumentIntelligenceService:
             # Process layout results
             analysis_result = self._process_layout_result(result, document_id, duration_ms)
             
-            structured_logger.info("Document layout analysis completed",
+            logger.info("Document layout analysis completed",
                                  document_id=str(document_id),
                                  duration_ms=duration_ms,
                                  tables_found=len(analysis_result.get('tables', [])),
@@ -189,7 +170,7 @@ class AzureDocumentIntelligenceService:
             
         except Exception as e:
             duration_ms = (time.time() - start_time) * 1000
-            structured_logger.error("Document layout analysis failed",
+            logger.error("Document layout analysis failed",
                                   document_id=str(document_id),
                                   duration_ms=duration_ms,
                                   error=str(e))
@@ -251,7 +232,7 @@ class AzureDocumentIntelligenceService:
             return analysis_result
             
         except Exception as e:
-            structured_logger.error("Error processing read results",
+            logger.error("Error processing read results",
                                   document_id=str(document_id),
                                   error=str(e))
             # Return minimal result on processing error
@@ -343,7 +324,7 @@ class AzureDocumentIntelligenceService:
             return analysis_result
             
         except Exception as e:
-            structured_logger.error("Error processing layout results",
+            logger.error("Error processing layout results",
                                   document_id=str(document_id),
                                   error=str(e))
             # Return minimal result on processing error
@@ -382,16 +363,14 @@ class AzureDocumentIntelligenceService:
             # Check file size (Azure has limits)
             max_size = 50 * 1024 * 1024  # 50MB limit
             if len(document_content) > max_size:
-                structured_logger.warning("Document exceeds size limit",
-                                        size=len(document_content),
-                                        max_size=max_size)
+                logger.warning(f"Document exceeds size limit - size: {len(document_content)}, max: {max_size}")
                 return False
             
             # Additional validation could be added here
             return True
             
         except Exception as e:
-            structured_logger.error("Document validation failed", error=str(e))
+            logger.error(f"Document validation failed: {e}")
             return False
     
     def extract_document_metadata(self, result: Dict[str, Any]) -> Dict[str, Any]:
@@ -418,7 +397,7 @@ class AzureDocumentIntelligenceService:
             return metadata
             
         except Exception as e:
-            structured_logger.error("Error extracting document metadata", error=str(e))
+            logger.error(f"Error extracting document metadata: {e}")
             return {"error": f"Metadata extraction failed: {str(e)}"}
 
 
