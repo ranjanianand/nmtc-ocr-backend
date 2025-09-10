@@ -476,8 +476,8 @@ async def manual_detection_trigger(document_id: str):
         
         # Import the detection task function directly
         from app.tasks.document_tasks import process_document_quick_detection
-        from app.services.azure_doc_intelligence import AzureDocIntelligenceService
-        from app.services.nmtc_detection import NMTCDocumentDetector
+        from app.services.azure_service import AzureDocumentIntelligenceService
+        from app.services.detection_service import DetectionService
         from app.services.supabase_service import SupabaseService
         
         # Get document info
@@ -495,8 +495,8 @@ async def manual_detection_trigger(document_id: str):
         )
         
         # Initialize services
-        azure_service = AzureDocIntelligenceService()
-        nmtc_detector = NMTCDocumentDetector()
+        azure_service = AzureDocumentIntelligenceService()
+        nmtc_detector = DetectionService()
         
         # Download PDF from Supabase Storage
         supabase_client = SupabaseService()
@@ -511,7 +511,7 @@ async def manual_detection_trigger(document_id: str):
             
         # Detect document type using NMTC patterns
         logger.info("Starting NMTC document type detection...")
-        detection_result = nmtc_detector.detect_document_type(extraction_result['content'])
+        detection_result = await nmtc_detector.process_quick_detection(document_id, extraction_result['content'])
         
         # Update document with results
         updates = {

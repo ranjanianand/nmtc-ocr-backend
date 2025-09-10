@@ -13,7 +13,7 @@ class SupabaseService:
         )
     
     async def create_document_record(self, org_id: str, file_path: str, metadata: dict, user_id: str = None):
-        """Create initial document record in database"""
+        """Create initial document record in database with system user fallback"""
         try:
             logger.info(f"Creating document record for org: {org_id}, path: {file_path}")
             
@@ -23,7 +23,7 @@ class SupabaseService:
                 'storage_path': file_path,
                 'filename': metadata.get('filename'),
                 'mime_type': 'application/pdf',
-                'uploaded_by': user_id if user_id else org_id,
+                'uploaded_by': user_id if user_id else '633e6379-c82f-4917-8215-6a8f0a7e972f',  # System user from seed data
                 'ocr_status': 'processing'
             }
             
