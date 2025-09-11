@@ -1,0 +1,546 @@
+# NMTC Compliance Platform - Complete Project Blueprint
+
+## 🏢 Project Overview
+
+**Application Name:** NMTC Compliance Automation Platform  
+**Business Model:** Enterprise B2B SaaS for NMTC compliance automation  
+**Market Opportunity:** $50-100M TAM, first-to-market AI solution for NMTC regulatory compliance  
+**Target Users:** Community Development Entities (CDEs), NMTC consultants, compliance professionals  
+**Conference Deadline:** October 15th, 2025 (Complete system demonstration)
+
+## 🎯 Business Strategy
+
+### Value Proposition
+- Transform manual NMTC compliance processes into automated intelligence
+- 10x faster document processing with 95% accuracy improvement
+- Reduce compliance review time by 70%
+- Generate professional reports in minutes vs hours
+
+### Competitive Advantages
+- ✅ First-to-market AI solution for NMTC compliance
+- ✅ Multi-agent architecture (enterprise-grade)
+- ✅ No-code configuration via Super Admin
+- ✅ Industry-specific regulatory expertise built-in
+- ✅ Complete workflow automation
+
+### Revenue Model
+- Annual Contract Value: $75K-150K per CDE
+- Recurring SaaS subscriptions
+- Professional services for implementation
+- High switching costs due to regulatory lock-in
+
+## 🏗️ Technical Architecture
+
+### Frontend
+- **Technology:** Loveable (No-code frontend builder)
+- **Repository:** nmtc-ocr-frontend (GitHub)
+- **Authentication:** Supabase Auth with organization context
+- **Key Features:**
+  - User authentication with role-based access
+  - File upload with validation
+  - Real-time processing status
+  - Report generation interface
+
+### Backend
+- **Technology:** FastAPI/Python
+- **Repository:** nmtc-ocr-backend (GitHub)
+- **Deployment:** Railway (https://web-production-171fc.up.railway.app/)
+- **Key Features:**
+  - Document upload API
+  - Azure Document Intelligence integration
+  - Multi-agent processing pipeline
+  - Report generation
+
+### Database
+- **Technology:** Supabase (PostgreSQL)
+- **Key Tables:**
+  - `documents` - Core document storage
+  - `agent_prompts` - AI agent configuration
+  - `document_types` - Document classification
+  - `business_rules` - NMTC compliance rules
+  - `report_templates` - Output formatting
+  - Plus comprehensive Super Admin configuration tables
+
+### AI Integration
+- **Azure Document Intelligence** - PDF text extraction and analysis
+- **Multi-agent processing pipeline** - 3 specialized AI agents
+- **Dynamic prompt management** - Configurable via database
+
+## 🤖 Multi-Agent Processing System
+
+### Stage 0A: Pre-Processing (Upload → Detection)
+1. User uploads PDF
+2. Store in Supabase Storage (staging)
+3. Azure Document Intelligence - quick text extraction
+4. Detect document type using NMTC patterns
+5. Return detection results to user for confirmation
+6. Insert into documents table only after confirmation
+
+### Core Engine: 3-Agent Pipeline
+
+#### Agent 1: Document Analyzer
+- **Purpose:** Query execution against mapped sections
+- **Process:** Data extraction with confidence scoring
+- **Output:** Raw structured data
+- **Uses:** agent_prompts table for document-type-specific extraction patterns
+
+#### Quality Gate 1: Confidence Validation
+- Validates extraction confidence scores
+- Routes low-confidence documents for human review
+- Maintains audit trail for regulatory compliance
+
+#### Agent 2: Risk Assessor & Business Rules Engine
+- **Purpose:** Apply NMTC compliance rules and risk assessment
+- **Process:**
+  - Normalize data formats (dates, currency, percentages)
+  - Apply business rules from database tables
+  - Calculate risk scores
+  - Generate compliance obligations
+- **Output:** Risk-assessed, normalized data
+
+#### Quality Gate 2: Business Rule Validation
+- Validates against NMTC compliance requirements
+- Flags regulatory violations
+- Ensures data quality for reporting
+
+#### Agent 3: Report Generator
+- **Purpose:** Generate professional compliance reports
+- **Process:**
+  - Combine Agent 1 + Agent 2 outputs
+  - Apply professional templates from database
+  - Generate multiple report formats
+- **Output:** Executive summaries, detailed reports, action plans
+
+### Final Quality Check & Delivery
+- Comprehensive validation of all outputs
+- Professional report formatting
+- Audit trail completion
+
+## 👑 Super Admin Module
+
+### Core Capabilities
+- **Document Type Builder** - Create new document types without coding
+- **Business Rules Configuration** - Set up NMTC compliance logic
+- **Agent Prompt Management** - Configure AI agent behavior
+- **Report Template Designer** - Customize output formats
+- **User Role Management** - Control access and permissions
+
+### Super Admin Core Engine
+1. **Upload Sample Document** (e.g., new QLICI variant)
+2. **AI-Powered Analysis:**
+   - Extract sections automatically
+   - Generate extraction queries
+   - Suggest business rules
+   - Create report templates
+3. **Interactive Configuration:**
+   - Adjust extraction patterns
+   - Fine-tune business rules
+   - Customize report formats
+4. **Testing & Validation:**
+   - Test with multiple samples
+   - Validate extraction accuracy
+   - Review report quality
+5. **Deploy to Production:**
+   - Make available to end users
+   - Monitor performance
+   - Iterate based on results
+
+### Agent_Prompts Table Usage
+```sql
+-- Example structure
+agent_type: 'document_analyzer' | 'risk_assessor' | 'report_generator'
+document_type: 'qlici_loan' | 'cba' | 'allocation_agreement' | etc.
+prompt_template: Dynamic prompts for each agent/document combination
+variables: Configurable parameters for prompt customization
+version: Version control for prompt iterations
+```
+
+## 🔄 Current Workflow Analysis
+
+### MVP Upload Flow (Implemented)
+1. User authentication & org context validation
+2. File upload (single PDF for MVP)
+3. Store in Supabase Storage
+4. Create database record
+5. Return success response
+
+### Correct Workflow (To Implement)
+1. User uploads PDF
+2. Store in Supabase Storage (temporary/staging)
+3. **Stage 0A: Quick Document Detection**
+   - Send to Azure Document Intelligence
+   - Extract basic text/metadata
+   - Detect document type
+   - Extract key information
+4. **Display detection results to user**
+   - Show detected document type
+   - Display confidence score
+   - Present extracted metadata
+5. User confirms/corrects detection
+6. Insert into documents table (permanent)
+7. Trigger core engine processing
+8. Multi-agent pipeline execution
+9. Generate final reports
+
+## 💾 Data Flow & API Contracts
+
+### Frontend → Backend Data Flow
+```typescript
+// Upload Request
+FormData: {
+  file: PDF content,
+  user_id: authenticated user ID,
+  org_id: user's organization ID,
+  document_type?: optional string,
+  cde_name?: optional string,
+  client_info?: optional string
+}
+
+// Expected Response
+DocumentUploadResponse: {
+  document_id: string,
+  status: DocumentStatus,
+  message: string,
+  file_path: string
+}
+```
+
+### Key API Endpoints
+- `POST /api/documents/upload` - Upload document
+- `GET /api/documents/{id}/status` - Check processing status
+- `POST /api/documents/{id}/validate` - User confirms detection
+- `GET /api/documents/test-table` - Database connectivity test
+- `GET /api/documents/test-storage` - Supabase storage test
+
+### Database Schema Highlights
+```sql
+-- Documents table
+documents: {
+  id: UUID (primary key),
+  org_id: UUID (organization),
+  document_type_id: UUID (optional, links to document types),
+  filename: string,
+  storage_path: string,
+  mime_type: string,
+  uploaded_by: UUID (user),
+  uploaded_at: timestamp,
+  ocr_status: enum ('processing', 'completed', 'error'),
+  parsed_index: jsonb (extracted data)
+}
+```
+
+## 🚧 Current Development Status
+
+### ✅ Completed
+- Frontend authentication system with organization context
+- Backend API with Railway deployment
+- File upload functionality (frontend ↔ backend)
+- Database schema and Super Admin configuration tables
+- Multi-agent architecture design and planning
+- Agent_prompts table structure and usage plan
+
+### 🔄 In Progress
+- Stage 0A integration (upload → Azure detection → user confirmation)
+
+### ❌ Remaining Work for Oct 15th Conference
+
+#### Week 1-2 (Sep 9-22): Core Engine Foundation
+- Complete Stage 0A implementation
+- Azure Document Intelligence integration
+- Agent 1: Document Analyzer (full version)
+- Database workflow completion
+
+#### Week 3 (Sep 23-29): Multi-Agent System
+- Agent 2: Risk Assessor & Business Rules Engine
+- Agent 3: Report Generator
+- Quality gates implementation
+- End-to-end processing pipeline
+
+#### Week 4 (Sep 30-Oct 6): Super Admin Core Engine
+- Document type builder interface
+- Agent prompts management system
+- Testing & validation tools
+- No-code document type creation
+
+#### Week 5 (Oct 7-13): Polish & Demo Preparation
+- UI/UX improvements for conference demo
+- Performance optimization
+- Demo data scenarios preparation
+- Professional presentation materials
+
+#### Week 6 (Oct 14-15): Final Testing & Conference
+
+## 🔧 Technical Implementation Notes
+
+### Critical Development Guidelines
+- Always maintain frontend-backend flow alignment
+- Test complete data flow after every change
+- Ensure API contracts match exactly
+- Commit both repositories together
+- Validate field names and data types
+
+### Known Technical Issues (Fixed)
+- ✅ UUID vs string mismatch in document_type_id field
+- ✅ OCR status enum validation
+- ✅ Foreign key constraints in uploaded_by field
+- ✅ File upload authentication and organization context
+
+### Environment Configuration
+- **Frontend:** Loveable development/production
+- **Backend:** Railway deployment with environment variables
+- **Database:** Supabase with proper table relationships
+- **Azure:** Document Intelligence service integration
+
+### Repository Information
+- **Frontend:** https://github.com/ranjanianand/nmtc-ocr-frontend
+- **Backend:** https://github.com/ranjanianand/nmtc-ocr-backend
+- **Deployment:** https://web-production-171fc.up.railway.app/
+
+## 🎪 Conference Demo Strategy
+
+### Complete System Demonstration
+1. Super Admin creates new document type live on stage
+2. User uploads multiple document types
+3. Real-time multi-agent processing visualization
+4. Professional compliance report generation
+5. Risk assessment and business rules showcase
+6. Audit trails and governance features
+7. Q&A with working system
+
+### Key Demo Points
+- First-to-market AI solution for NMTC compliance
+- No-code configuration capabilities
+- Enterprise-grade architecture
+- Immediate ROI for CDEs
+- Ready for pilot customer deployment
+
+### Expected Outcomes
+- Immediate sales opportunities from conference attendees
+- Investor interest from complete system demonstration
+- Partnership possibilities with CDEs and consulting firms
+- Market validation for enterprise pricing model
+
+## 🏗️ Two-Platform Architecture
+
+### Super Admin Platform (Backend Management)
+**Purpose:** Platform administrators manage system configuration
+
+**Key Features:**
+- Organizations management (CRUD operations)
+- Document type configuration pipeline
+- User role and permissions management
+- Analytics and revenue tracking
+- System administration and monitoring
+
+### User Platform (Client Interface)
+**Purpose:** Client organizations process documents and track compliance
+
+**Key Features:**
+- Role-based access (Admin/Manager/Viewer)
+- Document upload and processing
+- Compliance tracking and reporting
+- Team collaboration
+- Usage analytics and billing overview
+
+## 📋 NMTC Document Types & Processing
+
+### Core Document Types
+Based on the knowledge base, the platform processes these critical NMTC documents:
+
+#### Allocation Agreement
+- **Knowledge Base Required:** CDFI Fund allocation templates, Section 45D regulations
+- **Input Layer:** Single PDF document (35-120 pages)
+- **Processing:** OCR/text extraction, obligation extraction focusing on QEI deadlines
+- **Output:** Executive dashboard, detailed report, compliance calendar
+
+#### QLICI Loan Agreement
+- **Knowledge Base Required:** Loan structure variations, covenant standards
+- **Input Layer:** PDF loan agreement (20-80 pages)
+- **Processing:** Document type recognition, financial covenant analysis
+- **Output:** Loan summary, covenant tracker, financial monitoring reports
+
+#### Community Benefits Agreement (CBA)
+- **Knowledge Base Required:** Community impact metrics, reporting requirements
+- **Processing:** Impact metrics extraction, reporting schedule identification
+- **Output:** Impact tracking dashboard, compliance reporting
+
+### Data Flow Integration
+Each document type follows a standardized processing flow:
+
+1. **Document Recognition** - Template matching, format recognition
+2. **Content Extraction** - Structured text, section maps using regulatory requirements
+3. **Risk Assessment** - Compliance standards, penalty frameworks
+4. **Output Generation** - Professional templates, formatting standards
+
+## 📋 Quick Context Checklist for New Sessions
+
+When opening a new Claude CLI session, provide this context:
+
+1. **Project:** NMTC Compliance Platform - Enterprise B2B SaaS
+2. **Timeline:** Oct 15th conference (36 days total)
+3. **Architecture:** Loveable frontend + FastAPI backend + Supabase database
+4. **Key Feature:** Multi-agent AI processing with Super Admin configuration
+5. **Current Status:** File upload working, need Stage 0A integration
+6. **Repositories:** nmtc-ocr-frontend and nmtc-ocr-backend on GitHub
+7. **Deployment:** Railway at web-production-171fc.up.railway.app
+8. **Critical Rule:** Always check frontend-backend flow alignment
+
+## 🔐 Test Credentials & Data
+
+### Super Admin Access
+- **Email:** anandedison@gmail.com
+- **Password:** [Set in Supabase]
+
+### Organization Test Users
+- **admin@ndconline.org** (Organization Admin)
+- **compliance@ndconline.org** (Manager)
+- **analyst@ndconline.org** (Viewer)
+
+### Sample Organizations
+- National Development Council
+- LiftFund
+- Urban Development Corporation
+- LII Fund
+- Grameen America
+- Plus 20+ more realistic NMTC organizations
+
+---
+
+**This document contains all essential context for continuing development of the NMTC Compliance Platform. Save this as a reference for future Claude CLI sessions.**
+
+## 📝 Document Maintenance Protocol
+
+**CRITICAL:** This blueprint document must be kept current to ensure consistency across all Claude Code CLI sessions.
+
+### Daily Work Log System
+**REQUIREMENT:** Create dated daily work logs to track progress and plan next-day activities.
+
+#### Daily Log File Format:
+```
+NMTC_Daily_Log_YYYY-MM-DD.md
+
+# NMTC Platform Development Log - [Date]
+
+## Today's Objectives
+- [ ] Task 1
+- [ ] Task 2  
+- [ ] Task 3
+
+## Work Completed
+### Frontend Changes (nmtc-frontend)
+- Completed feature X
+- Fixed bug Y
+- Updated component Z
+
+### Backend Changes (nmtc-backend)  
+- Added API endpoint for X
+- Updated database model Y
+- Fixed authentication issue Z
+
+### Database Updates
+- Added new table: table_name
+- Modified existing table: changes made
+- Updated test data: what was changed
+
+## Testing Results
+### Local Testing
+- [ ] Frontend runs successfully (npm run dev)
+- [ ] Backend runs successfully (python main.py)
+- [ ] Database connections working
+- [ ] API endpoints responding correctly
+- [ ] Authentication flow working
+
+### Online Testing  
+- [ ] Loveable deployment working
+- [ ] Railway backend deployment functional
+- [ ] End-to-end workflow tested
+- [ ] No critical errors in production
+
+## Issues Encountered
+- Issue 1: Description and resolution
+- Issue 2: Description and resolution
+
+## Next Day Priorities
+- [ ] Priority task 1
+- [ ] Priority task 2
+- [ ] Priority task 3
+
+## Notes & Observations
+- Important discovery or decision
+- Architecture consideration
+- Performance observation
+
+---
+**Blueprint Updated:** [Yes/No] - If yes, what sections were modified
+```
+
+### Development & Testing Workflow
+
+#### Daily Development Process:
+1. **Start Session:** Review previous day's log and blueprint
+2. **Set Objectives:** Define today's tasks in daily log
+3. **Implement Features:** Make changes to frontend/backend
+4. **Update Blueprint:** Modify relevant sections as changes are made
+5. **Local Testing:** Complete testing protocol below
+6. **Online Verification:** Test on Loveable and Railway
+7. **Complete Daily Log:** Document all work and next-day priorities
+
+#### Required Testing Protocol:
+**Before marking any task complete, Claude must:**
+
+```bash
+# 1. Test Frontend Locally
+cd nmtc-frontend
+npm install  # if needed
+npm run dev
+# Verify: Login works, pages load, no console errors
+
+# 2. Test Backend Locally  
+cd nmtc-backend
+python -m pip install -r requirements.txt  # if needed
+python main.py
+# Verify: Server starts, API endpoints respond, database connects
+
+# 3. Test Integration
+# Verify: Frontend can communicate with local backend
+# Test: File upload, authentication, data flow
+
+# 4. Document Test Results
+# Update daily log with testing outcomes
+```
+
+#### Online Verification Process:
+**Only after local testing passes:**
+1. **Loveable Frontend:** Test deployed frontend functionality
+2. **Railway Backend:** Verify production backend performance  
+3. **End-to-End:** Complete workflow testing in production environment
+4. **Performance:** Check response times and error rates
+
+### When to Update This Document:
+- ✅ New features added to the platform
+- ✅ Business logic changes or rule modifications  
+- ✅ Database schema updates or table additions
+- ✅ API endpoint changes or new integrations
+- ✅ Authentication flow modifications
+- ✅ Test user updates or new organizations added
+- ✅ Development environment changes
+- ✅ Major architectural decisions or technology changes
+
+### How to Update:
+1. **During Development:** When implementing new features, update the relevant sections in this blueprint
+2. **Claude Code CLI Responsibility:** Always ask Claude to update this document when significant changes are made
+3. **Daily Log Creation:** Create/update daily log file for each development session
+4. **Version Control:** Keep this document in sync with actual codebase changes
+5. **Section-Specific Updates:** Focus updates on affected sections rather than rewriting entire document
+
+### Key Sections to Monitor:
+- **Current Development Status** - Update completion percentages and remaining work
+- **Database Schema** - Add new tables or field changes  
+- **API Contracts** - Update endpoints and data structures
+- **Test Credentials** - Maintain current test users and organizations
+- **Technical Implementation Notes** - Document new issues and solutions
+
+**Commands for Claude:** 
+- "Please update the NMTC platform blueprint document to reflect the changes we just implemented."
+- "Create today's daily work log and summarize what we accomplished."
+- "Run local testing protocol before we proceed to online verification."

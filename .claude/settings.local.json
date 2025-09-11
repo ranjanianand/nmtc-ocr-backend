@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//e/Raine/YOZY/Clients/AV/cdesolution/AI_OCR/nmtc-frontend/src/**)",
+      "Read(//e/Raine/YOZY/Clients/AV/cdesolution/AI_OCR/nmtc-frontend/**)",
+      "Bash(python:*)",
+      "Read(//e/Raine/YOZY/Clients/AV/cdesolution/AI_OCR/**)",
+      "Bash(npm run dev:*)",
+      "Bash(celery:*)",
+      "Bash(git push:*)",
+      "Bash(railway variables set:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
