@@ -16,7 +16,7 @@ class SupabaseService:
         """Create initial document record in database with system user fallback"""
         try:
             logger.info(f"Creating document record for org: {org_id}, path: {file_path}")
-            
+
             # Use exact column names from your table structure
             insert_data = {
                 'org_id': org_id,
@@ -27,9 +27,31 @@ class SupabaseService:
                 'ocr_status': 'processing'
             }
             
-            # Skip document_type_id for now - it requires UUID mapping
-            # if metadata.get('document_type'):
-            #     insert_data['document_type_id'] = metadata.get('document_type')
+            # Handle document type - use document_category for allocation documents
+            document_type_id = metadata.get('document_type_id')
+            if document_type_id:
+                # For allocation years, always use document_category instead of document_type_id
+                if document_type_id in ['allocation_agreement', 'qlici_loan', 'qalicb_certification']:
+                    insert_data['document_category'] = document_type_id
+                    # Explicitly do NOT add document_type_id when using document_category
+                    logger.info(f"Using document_category: {document_type_id} (skipping document_type_id)")
+                else:
+                    # Only add document_type_id if it looks like a UUID
+                    import re
+                    uuid_pattern = re.compile(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', re.IGNORECASE)
+                    if uuid_pattern.match(document_type_id):
+                        insert_data['document_type_id'] = document_type_id
+                        logger.info(f"Using document_type_id UUID: {document_type_id}")
+                    else:
+                        logger.warning(f"Invalid document_type_id format: {document_type_id}, skipping")
+            
+            # Add description if provided
+            if metadata.get('description'):
+                insert_data['description'] = metadata.get('description')
+                
+            # Add user_selected_type flag
+            if metadata.get('user_selected_type') is not None:
+                insert_data['user_selected_type'] = metadata.get('user_selected_type')
             
             logger.info(f"Insert data: {insert_data}")
             

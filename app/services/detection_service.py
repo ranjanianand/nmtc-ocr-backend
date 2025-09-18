@@ -48,10 +48,7 @@ class NMTCDetectionService:
             DocumentTypeResult with classification and metadata
         """
         try:
-            logger.info("Starting document type detection",
-                                 document_id=str(document_id) if document_id else None,
-                                 filename=filename,
-                                 text_length=len(text_content))
+            logger.info(f"Starting document type detection: document_id={str(document_id) if document_id else None}, filename={filename}, text_length={len(text_content)}")
             
             if not text_content or len(text_content.strip()) < 50:
                 return self._create_unknown_result("Insufficient text content for classification")
@@ -95,12 +92,7 @@ class NMTCDetectionService:
                 reasoning=self._generate_reasoning(best_type, best_score, best_matches)
             )
             
-            logger.info("Document type detection completed",
-                                 document_id=str(document_id) if document_id else None,
-                                 detected_type=best_type.value,
-                                 confidence=best_score,
-                                 primary_indicators=len(result.primary_indicators),
-                                 secondary_indicators=len(result.secondary_indicators))
+            logger.info(f"Document type detection completed: document_id={str(document_id) if document_id else None}, detected_type={best_type.value}, confidence={best_score}, primary_indicators={len(result.primary_indicators)}, secondary_indicators={len(result.secondary_indicators)}")
             
             return result
             

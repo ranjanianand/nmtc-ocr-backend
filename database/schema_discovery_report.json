@@ -1,0 +1,408 @@
+{
+  "discovery_timestamp": "2025-09-13T19:19:56.318107",
+  "total_tables_analyzed": 16,
+  "successful_discoveries": 5,
+  "schema_data": {
+    "document_types": {
+      "exists": true,
+      "has_data": true,
+      "row_count": 1,
+      "columns": {
+        "id": {
+          "python_type": "str",
+          "sample_value": "36600bda-690a-45f5-b44f-ae19d0a46242",
+          "nullable": false
+        },
+        "org_id": {
+          "python_type": "NoneType",
+          "sample_value": "NULL",
+          "nullable": true
+        },
+        "owner_scope": {
+          "python_type": "str",
+          "sample_value": "template",
+          "nullable": false
+        },
+        "parent_id": {
+          "python_type": "NoneType",
+          "sample_value": "NULL",
+          "nullable": true
+        },
+        "key": {
+          "python_type": "str",
+          "sample_value": "QLICI_LOAN_AGREEMENT",
+          "nullable": false
+        },
+        "display_name": {
+          "python_type": "str",
+          "sample_value": "QLICI Loan Agreement",
+          "nullable": false
+        },
+        "version": {
+          "python_type": "str",
+          "sample_value": "1.0.0",
+          "nullable": false
+        },
+        "status": {
+          "python_type": "str",
+          "sample_value": "active",
+          "nullable": false
+        },
+        "notes": {
+          "python_type": "str",
+          "sample_value": "Defines NMTC capital deployment to QALICB. Covers ",
+          "nullable": false
+        },
+        "created_by": {
+          "python_type": "str",
+          "sample_value": "633e6379-c82f-4917-8215-6a8f0a7e972f",
+          "nullable": false
+        },
+        "created_at": {
+          "python_type": "str",
+          "sample_value": "2025-09-01T13:50:54.88948+00:00",
+          "nullable": false
+        },
+        "org_id_eff": {
+          "python_type": "str",
+          "sample_value": "00000000-0000-0000-0000-000000000000",
+          "nullable": false
+        },
+        "category_id": {
+          "python_type": "str",
+          "sample_value": "31724220-e1a7-430b-9e3e-9dacd0a75425",
+          "nullable": false
+        },
+        "status_id": {
+          "python_type": "str",
+          "sample_value": "c8c446ab-d63f-4828-99d9-508155b68c14",
+          "nullable": false
+        },
+        "workflow_state_id": {
+          "python_type": "str",
+          "sample_value": "6a41c5d4-49c9-4c2f-b1e4-729f45eb8f51",
+          "nullable": false
+        }
+      }
+    },
+    "sections": {
+      "exists": true,
+      "has_data": true,
+      "row_count": 1,
+      "columns": {
+        "id": {
+          "python_type": "str",
+          "sample_value": "d2970339-79d4-41e5-bc31-d0adbde4f625",
+          "nullable": false
+        },
+        "document_type_id": {
+          "python_type": "str",
+          "sample_value": "76a27d1d-a098-46e4-ad1c-f2542b115eb0",
+          "nullable": false
+        },
+        "canonical_name": {
+          "python_type": "str",
+          "sample_value": "Allocation Terms & Authority",
+          "nullable": false
+        },
+        "order_no": {
+          "python_type": "int",
+          "sample_value": "1",
+          "nullable": false
+        },
+        "anchor_patterns": {
+          "python_type": "list",
+          "sample_value": "['Section 1', 'Allocation', 'Authority', 'Credit A",
+          "nullable": false
+        },
+        "ml_fallback_model": {
+          "python_type": "str",
+          "sample_value": "gpt-4",
+          "nullable": false
+        },
+        "notes": {
+          "python_type": "str",
+          "sample_value": "Core allocation amount and QEI issuance authority",
+          "nullable": false
+        },
+        "version": {
+          "python_type": "int",
+          "sample_value": "1",
+          "nullable": false
+        },
+        "created_at": {
+          "python_type": "str",
+          "sample_value": "2025-09-01T13:50:54.88948+00:00",
+          "nullable": false
+        }
+      }
+    },
+    "queries": {
+      "exists": true,
+      "has_data": true,
+      "row_count": 1,
+      "columns": {
+        "id": {
+          "python_type": "str",
+          "sample_value": "7b90b88b-8b4d-4bd1-befa-c1c363d2a326",
+          "nullable": false
+        },
+        "document_type_id": {
+          "python_type": "str",
+          "sample_value": "1b2ca84d-b68d-474b-bf52-2457b08d376d",
+          "nullable": false
+        },
+        "section_id": {
+          "python_type": "str",
+          "sample_value": "27d61f08-ee48-4e37-8079-9d3677ad028f",
+          "nullable": false
+        },
+        "query_key": {
+          "python_type": "str",
+          "sample_value": "PN.PRINCIPAL.AMOUNT",
+          "nullable": false
+        },
+        "question_text": {
+          "python_type": "str",
+          "sample_value": "What is the principal amount of the note?",
+          "nullable": false
+        },
+        "extractors": {
+          "python_type": "list",
+          "sample_value": "['currency_extract']",
+          "nullable": false
+        },
+        "normalizer_hint": {
+          "python_type": "str",
+          "sample_value": "currency_percent",
+          "nullable": false
+        },
+        "required": {
+          "python_type": "bool",
+          "sample_value": "True",
+          "nullable": false
+        },
+        "version": {
+          "python_type": "int",
+          "sample_value": "1",
+          "nullable": false
+        },
+        "status": {
+          "python_type": "str",
+          "sample_value": "active",
+          "nullable": false
+        },
+        "created_at": {
+          "python_type": "str",
+          "sample_value": "2025-09-01T13:59:32.973158+00:00",
+          "nullable": false
+        }
+      }
+    },
+    "agent_prompts": {
+      "exists": true,
+      "has_data": true,
+      "row_count": 1,
+      "columns": {
+        "id": {
+          "python_type": "str",
+          "sample_value": "126e89c9-8a84-4c27-9d45-ca09ca914405",
+          "nullable": false
+        },
+        "agent_key": {
+          "python_type": "str",
+          "sample_value": "document_analyzer",
+          "nullable": false
+        },
+        "version": {
+          "python_type": "str",
+          "sample_value": "1.0.0",
+          "nullable": false
+        },
+        "status": {
+          "python_type": "str",
+          "sample_value": "active",
+          "nullable": false
+        },
+        "system_prompt": {
+          "python_type": "str",
+          "sample_value": "You are an expert NMTC compliance analyst with 20+",
+          "nullable": false
+        },
+        "task_prompt": {
+          "python_type": "str",
+          "sample_value": "Analyze the provided document and extract the requ",
+          "nullable": false
+        },
+        "style_guide": {
+          "python_type": "str",
+          "sample_value": "Use professional, precise language. Avoid speculat",
+          "nullable": false
+        },
+        "output_schema_json": {
+          "python_type": "dict",
+          "sample_value": "{'type': 'object', 'required': ['extracted_value',",
+          "nullable": false
+        },
+        "guardrails": {
+          "python_type": "str",
+          "sample_value": "Never make up information not present in the docum",
+          "nullable": false
+        },
+        "created_by": {
+          "python_type": "str",
+          "sample_value": "633e6379-c82f-4917-8215-6a8f0a7e972f",
+          "nullable": false
+        },
+        "created_at": {
+          "python_type": "str",
+          "sample_value": "2025-09-02T14:02:43.51365+00:00",
+          "nullable": false
+        },
+        "document_type_id": {
+          "python_type": "NoneType",
+          "sample_value": "NULL",
+          "nullable": true
+        },
+        "prompt_role_id": {
+          "python_type": "NoneType",
+          "sample_value": "NULL",
+          "nullable": true
+        }
+      }
+    },
+    "documents": {
+      "exists": true,
+      "has_data": true,
+      "row_count": 1,
+      "columns": {
+        "id": {
+          "python_type": "str",
+          "sample_value": "dc457ce7-2274-435c-9cec-a0053f6c7df8",
+          "nullable": false
+        },
+        "org_id": {
+          "python_type": "str",
+          "sample_value": "ce117b87-d75c-4c8a-b3f5-922ddec539b0",
+          "nullable": false
+        },
+        "document_type_id": {
+          "python_type": "str",
+          "sample_value": "76a27d1d-a098-46e4-ad1c-f2542b115eb0",
+          "nullable": false
+        },
+        "filename": {
+          "python_type": "str",
+          "sample_value": "QLICI_Loan_Agreement_001.pdf",
+          "nullable": false
+        },
+        "storage_path": {
+          "python_type": "str",
+          "sample_value": "/documents/QLICI_Loan_Agreement_001.pdf",
+          "nullable": false
+        },
+        "mime_type": {
+          "python_type": "str",
+          "sample_value": "application/pdf",
+          "nullable": false
+        },
+        "hash": {
+          "python_type": "NoneType",
+          "sample_value": "NULL",
+          "nullable": true
+        },
+        "uploaded_by": {
+          "python_type": "str",
+          "sample_value": "633e6379-c82f-4917-8215-6a8f0a7e972f",
+          "nullable": false
+        },
+        "uploaded_at": {
+          "python_type": "str",
+          "sample_value": "2025-08-31T13:37:27.878112+00:00",
+          "nullable": false
+        },
+        "ocr_status": {
+          "python_type": "str",
+          "sample_value": "processing",
+          "nullable": false
+        },
+        "parsed_index": {
+          "python_type": "NoneType",
+          "sample_value": "NULL",
+          "nullable": true
+        }
+      }
+    },
+    "document_section_instances": {
+      "exists": true,
+      "has_data": false,
+      "row_count": 0,
+      "columns": {},
+      "note": "Table exists but is empty - column structure unknown"
+    },
+    "query_execution_results": {
+      "exists": true,
+      "has_data": false,
+      "row_count": 0,
+      "columns": {},
+      "note": "Table exists but is empty - column structure unknown"
+    },
+    "normalization_applications": {
+      "exists": true,
+      "has_data": false,
+      "row_count": 0,
+      "columns": {},
+      "note": "Table exists but is empty - column structure unknown"
+    },
+    "business_rule_evaluations": {
+      "exists": true,
+      "has_data": false,
+      "row_count": 0,
+      "columns": {},
+      "note": "Table exists but is empty - column structure unknown"
+    },
+    "agent_prompt_applications": {
+      "exists": true,
+      "has_data": false,
+      "row_count": 0,
+      "columns": {},
+      "note": "Table exists but is empty - column structure unknown"
+    },
+    "workflow_stage_completions": {
+      "exists": true,
+      "has_data": false,
+      "row_count": 0,
+      "columns": {},
+      "note": "Table exists but is empty - column structure unknown"
+    },
+    "processing_sessions": {
+      "exists": true,
+      "has_data": false,
+      "row_count": 0,
+      "columns": {},
+      "note": "Table exists but is empty - column structure unknown"
+    },
+    "audit_logs": {
+      "exists": false,
+      "error": "{'code': 'PGRST205', 'details': None, 'hint': \"Perhaps you meant the table 'public.audit_log'\", 'message': \"Could not find the table 'public.audit_logs' in the schema cache\"}"
+    },
+    "extracted_data": {
+      "exists": false,
+      "error": "{'code': 'PGRST205', 'details': None, 'hint': \"Perhaps you meant the table 'public.extractions'\", 'message': \"Could not find the table 'public.extracted_data' in the schema cache\"}"
+    },
+    "risk_assessments": {
+      "exists": false,
+      "error": "{'code': 'PGRST205', 'details': None, 'hint': \"Perhaps you meant the table 'public.risk_assessment_results'\", 'message': \"Could not find the table 'public.risk_assessments' in the schema cache\"}"
+    },
+    "reports": {
+      "exists": false,
+      "error": "{'code': 'PGRST205', 'details': None, 'hint': \"Perhaps you meant the table 'public.report_mappings'\", 'message': \"Could not find the table 'public.reports' in the schema cache\"}"
+    }
+  },
+  "reliability_notes": [
+    "This discovery was performed with ZERO ASSUMPTIONS",
+    "All data verified against live database",
+    "Column types determined from actual data samples",
+    "Empty tables noted but structure unknown"
+  ]
+}
